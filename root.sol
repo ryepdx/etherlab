@@ -45,6 +45,7 @@ contract root {
         quorum = 1;
         quorumPercent = 60;
         marginForVictory = 0;
+        marginForVictoryPercent = 0;
         owners[msg.sender] = msg.sender;
         _ownersTail = msg.sender;
     }
