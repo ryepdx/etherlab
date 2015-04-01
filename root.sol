@@ -193,8 +193,8 @@ contract root {
         address iter = _ownersTail;
         for (uint i=0; i < _numOwners; i += 1) {
             delete proposals[iter];
+            iter = owners[iter];
         }
-        iter = owners[iter];
     }
 
     function _spend(address recipient, uint amount) private {
