@@ -1,10 +1,10 @@
 contract ProtectedApi is ApiProvider, PermissionsEnabled {
     // PoC-8
 
-    string32 PERMISSIONS_CONTRACT = "PermissionsProvider";
+    bytes32 PERMISSIONS_CONTRACT = "PermissionsProvider";
 
-    mapping (string32 => address) public contracts;
-    mapping (uint => string32) contractNames;
+    mapping (bytes32 => address) public contracts;
+    mapping (uint => bytes32) contractNames;
     uint contractCount;
 
     function ProtectedApi(address permissionsProvider) {
@@ -22,7 +22,7 @@ contract ProtectedApi is ApiProvider, PermissionsEnabled {
         contracts[PERMISSIONS_CONTRACT] = provider;
     }
 
-    function addContract(string32 name, address newContract) returns (bool result) {
+    function addContract(bytes32 name, address newContract) returns (bool result) {
         if (!_permitted()) return;
     
         ApiEnabled contractObj = ApiEnabled(newContract);
@@ -36,7 +36,7 @@ contract ProtectedApi is ApiProvider, PermissionsEnabled {
         return true;
     }
 
-    function removeContract(string32 name) returns (bool result) {
+    function removeContract(bytes32 name) returns (bool result) {
         if (contracts[name] == 0x0 || !_permitted()) return false;
         
         bool match = false;
