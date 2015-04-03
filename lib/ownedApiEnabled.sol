@@ -1,0 +1,22 @@
+contract OwnedApiEnabled is Owned, ApiEnabled {
+    address api;
+
+    function apiAuthorized() returns (bool result) {
+       return ((api == 0x0 && msg.sender == owner) || msg.sender == api);
+    }
+
+    function setApiAddress(address newApi) returns (bool result) {
+        if (!apiAuthorized()) return false;
+        api = newApi;
+        return true;
+    }
+
+    function remove() {
+        if (!apiAuthorized()) return;
+        if (api == 0x0) {
+            suicide(owner);
+        } else {
+            suicide(api);
+        }
+    }
+}
