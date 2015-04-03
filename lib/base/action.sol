@@ -1,10 +1,6 @@
+// #include_once "base/owned.sol"
+
 contract Action is Owned {
-    // PoC-8
-    // include "owned.sol"
-
-    // This is the interface required for smart contracts
-    // submitted via proposeAction.
-
     function execute() {
         if (msg.sender != owner) return;
         _execute();

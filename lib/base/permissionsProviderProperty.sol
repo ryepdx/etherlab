@@ -1,3 +1,5 @@
+// #include_once "base/persistentProtectedContract.sol"
+
 contract PermissionsProviderProperty is PersistentProtectedContract {
     function senderIsProvider() returns (bool result) {
         var provider = getPermissionsProvider();

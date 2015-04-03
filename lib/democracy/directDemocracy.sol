@@ -1,3 +1,9 @@
+// #include_once "base/api.sol"
+// #include_once "base/action.sol"
+// #include_once "base/permissions.sol"
+// #include_once "base/persistentProtectedContract.sol"
+// #include_once "democracy/ownersDb.sol"
+
 /// @title Direct Democracy Smart Contract Governance
 /// @author ryepdx
 contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {

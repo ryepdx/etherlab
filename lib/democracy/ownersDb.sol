@@ -1,3 +1,5 @@
+// #include_once "base/permissionsProviderProperty.sol"
+
 contract OwnersDb is PermissionsProviderProperty {
     mapping (address => address) public owners;
     address public ownersTail;
