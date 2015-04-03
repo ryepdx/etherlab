@@ -15,7 +15,7 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
     uint public maximumVotingWindow;
 
     uint VOTING_WINDOW_MIN = 600; // 10 minutes
-    bytes32 OWNERS_DB = "OwnersDb";
+    string32 OWNERS_DB = "OwnersDb";
 
     mapping (address => Proposal) public proposals;
     mapping (address => bool) permittedAction;
