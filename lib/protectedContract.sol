@@ -1,6 +1,6 @@
 contract ProtectedContract is OwnedApiEnabled, PermissionsEnabled {
     function apiAuthorized() returns (bool result) {
-        return super.apiAuthorized() || _permitted();
+        return super.apiAuthorized() || permittedSender();
     }
 
     function setApiAddress(address newApi) returns (bool result) {
@@ -17,11 +17,6 @@ contract ProtectedContract is OwnedApiEnabled, PermissionsEnabled {
     }
 
     function permittedSender() returns (bool result) {
-        if (api == 0x0) return false;
-        return PermissionsProvider(PermissionsEnabled(api).getPermissionsProvider()).permitted(msg.sender);
-    }
-
-    function _permitted() private returns (bool result) {
         if (api == 0x0) return false;
         return PermissionsProvider(PermissionsEnabled(api).getPermissionsProvider()).permitted(msg.sender);
     }
