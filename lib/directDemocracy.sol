@@ -34,7 +34,9 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
     }
 
     function permitted(address action) returns (bool result) {
-        return permittedAction[action];
+        return permittedAction[action]
+        || api == 0x0
+        || ApiProvider(api).contracts(OWNERS_DB) == 0x0;
     }
 
     function addOwner(address owner) returns (bool added) {
