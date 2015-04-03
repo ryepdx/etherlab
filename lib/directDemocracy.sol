@@ -1,7 +1,6 @@
+/// @title Direct Democracy Smart Contract Governance
+/// @author ryepdx
 contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
-    // PoC-8
-    // include "action.sol"
-
     uint public quorum;
     uint8 public quorumPercent;
     uint public marginForVictory;
@@ -25,7 +24,14 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         uint numVotes;
         address proposedAction;
     }
-
+    
+    /// @notice Create a DirectDemocracy voting smart contract.
+    /// Before it will begin working properly, the address of a
+    /// smart contract implementing the ApiProvider interface
+    /// must be passed to setApiAddress, and the "`OWNERS_DB`"
+    /// contract entry on the ApiProvider must set to the address
+    /// of a smart contract implementing the OwnersDb interface.
+    /// @dev Implements the PermissionsProvider interface.
     function DirectDemocracy() {
         quorum = 1;
         quorumPercent = 60;
@@ -33,12 +39,23 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         marginForVictoryPercent = 0;
     }
 
+    /// @notice Check if the contract referred to should be
+    /// permitted to modify contracts relying on this contract
+    /// for protection.
+    /// @param action
+    /// @return True if the contract was voted on and passed,
+    /// or if the DirectDemocracy contract isn't set up yet.
     function permitted(address action) returns (bool result) {
         return permittedAction[action]
         || api == 0x0
         || ApiProvider(api).contracts(OWNERS_DB) == 0x0;
     }
 
+    /// @notice Add a new voting owner to the contract.
+    /// May only be successfully called from an Action
+    /// contract that was voted on and passed.
+    /// @param owner
+    /// @return True if owner was added, false otherwise. 
     function addOwner(address owner) returns (bool added) {
         var dbAddress = ApiProvider(api).contracts(OWNERS_DB);
         if (dbAddress == 0x0 || !permittedSender()) return false;
@@ -49,7 +66,12 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
             _updateMargins();
         }
     }
-
+ 
+    /// @notice Remove a voting owner from the contract.
+    /// May only be successfully called from an Action
+    /// contract that was voted on and passed.
+    /// @param owner
+    /// @return True if owner was removed, false otherwise. 
     function removeOwner(address owner) returns (bool removed) {
         var dbAddress = ApiProvider(api).contracts(OWNERS_DB);
         var db = OwnersDb(dbAddress);
@@ -82,6 +104,23 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         return true;
     }
 
+    /// @notice Propose an Action contract for execution.
+    /// If the Action contract is passed, it will have full
+    /// permission to modify any contracts protected by this
+    /// contract, including this contract itself. Each owner
+    /// can only have one Action contract proposed at any
+    /// given time.
+    /// @dev One way the limit on proposals can be raised is
+    /// by turning the proposals mapping into a two-dimensional
+    /// mapping of owners to block timestamps to proposals.
+    /// In fact, this is how it was done in an earlier version:
+    /// https://github.com/ryepdx/etherlab/blob/386b3c5db36ac40
+    /// 25408025b6f601110d36cdae4/root.sol
+    /// After switching from single-action, hardcoded proposals
+    /// to Action contracts, though, the loss of efficiency due
+    /// to maintaining a two-dimensional mapping just didn't
+    /// seem worth it anymore.
+    /// @param proposedAction
     function proposeAction(address proposedAction) {
         var dbAddress = ApiProvider(api).contracts(OWNERS_DB);
         var db = OwnersDb(dbAddress);
@@ -97,27 +136,60 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         proposal.numVotes = 1;
     }
 
+    /// @notice Withdraw from voting the Action contract you
+    /// had previously proposed.
     function withdrawProposedAction() {
         _removeProposal(msg.sender);
     }
 
+    /// @notice Set the minimum voter turnout necessary for
+    /// an Action contract to pass. May only be successfully
+    /// called from an Action contract that was passed.
+    /// @param percent Voter turnout percentage as an
+    /// unsigned integer. Cannot be greater than 100.
     function setQuorumPercent(uint8 percent) {
         if (percent > 100 || !permittedSender()) return;
         quorumPercent = percent;
         _updateMargins();
     }
 
+    /// @notice Set the percentage margin by which votes
+    /// in either direction must beat votes in the
+    /// other direction in order for an Action contract
+    /// to pass. May only be successfully called from an
+    /// Action contract that was voted on and passed.
+    /// @param percent Required margin percentage as an
+    /// unsigned integer. Cannot be greater than 100.
     function setMarginForVictoryPercent(uint8 percent) {
         if (percent > 100 || !permittedSender()) return;
         marginForVictoryPercent = percent;
         _updateMargins();
     }
 
+    /// @notice Set the minimum number of seconds voting
+    /// must remain open before a final count is made.
+    /// May only be successfully called from an Action
+    /// contract that was voted on and passed.
+    /// @dev Time is judged by block timestamps and thus
+    /// cannot be considered precise.
+    /// @param minimumWindow
     function setMinimumVotingWindow(uint minimumWindow) {
         if (!permittedSender()) return;
         minimumVotingWindow = minimumWindow;
     }
 
+    /// @notice Set the maximum number of seconds voting
+    /// may remain open before a final count is made.
+    /// Cannot be set to anything between 0 and
+    /// `VOTING_WINDOW_MIN`, exclusive. If set to 0,
+    /// voting will remain open until quorum is reached
+    /// and the margin required for victory has been
+    /// achieved by either side.
+    /// May only be successfully called from an Action
+    /// contract that was voted on and passed.
+    /// @dev Time is judged by block timestamps and thus
+    /// cannot be considered precise.
+    /// @param maximumWindow
     function setMaximumVotingWindow(uint maximumWindow) {
         if ((maximumWindow < VOTING_WINDOW_MIN && maximumWindow != 0)
             || !permittedSender()) {
@@ -126,6 +198,11 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         maximumVotingWindow = maximumWindow;
     }
 
+    /// @notice Remove all proposed Action contracts. May
+    /// only be successfully called from an Action contract
+    /// that was voted on and passed.
+    /// @dev Calls "remove" on each Action contract as they
+    /// are removed.
     function wipeProposedActions() {
         if (!permittedSender()) return;
 
@@ -143,9 +220,16 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         }
     }
 
+    /// @notice Vote on `action`, proposed by `owner`.
+    /// @dev We require the action parameter to make sure the
+    /// voter knows exactly what they are voting on. Otherwise
+    /// it might be possible to pull a "bait & switch" using
+    /// the "withdrawProposal" function, which could be
+    /// effective if there are only two or three owners.
+    /// @param owner The owner who proposed the Action.
+    /// @param action The Action contract being voted on.
+    /// @param vote A Vote value.
     function vote(address owner, address action, Vote vote) {
-        // We require the action parameter to make sure the voter knows
-        // exactly what they are voting on, to prevent "bait & switch."
         var proposal = proposals[owner];
 
         if (action == 0x0
@@ -178,11 +262,18 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
         }
     }
 
+    /// @notice Send `amount` wei to `recipient`.
+    /// May only be successfully called from an Action
+    /// contract that was voted on and passed.
+    /// @param recipient
+    /// @param amount
     function spend(address recipient, uint amount) {
         if (!permittedSender()) return;
         recipient.send(amount);
     }
 
+    /// @notice Delete this contract and all its proposed
+    /// Action contracts from the blockchain.
     function remove() {
         if (!permittedSender()) return;
         wipeProposedActions();
