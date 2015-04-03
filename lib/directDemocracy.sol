@@ -185,11 +185,13 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
 
     function remove() {
         if (!permittedSender()) return;
+        wipeProposedActions();
         super.remove();
     }
 
     function _removeProposal(address owner) private {
         if (proposals[owner].proposedAction == 0x0) return;
+        Action(proposals[owner].proposedAction).remove();
         delete proposals[owner];
     }
 
