@@ -102,13 +102,13 @@ contract DirectDemocracy is PermissionsProvider, PersistentProtectedContract {
     }
 
     function setQuorumPercent(uint8 percent) {
-        if (!permittedSender()) return;
+        if (percent > 100 || !permittedSender()) return;
         quorumPercent = percent;
         _updateMargins();
     }
 
     function setMarginForVictoryPercent(uint8 percent) {
-        if (!permittedSender()) return;
+        if (percent > 100 || !permittedSender()) return;
         marginForVictoryPercent = percent;
         _updateMargins();
     }
